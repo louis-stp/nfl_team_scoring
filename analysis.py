@@ -1,9 +1,11 @@
+from operator import pos
 from unicodedata import name
 from ortools.linear_solver import pywraplp
 import numpy as np
 import pandas as pd
 import requests
 import time
+
 
 AVG_PTS_PER_GAME = 23
 
@@ -139,6 +141,9 @@ class DataIO:
             df= df.astype({'Pts':int,'Pts.1':int,'YdsW':int,'TOW':int,'YdsL':int,'TOL':int})
             df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
             df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
+            df['season'] = df['Date'].apply(self.getTeamSeason)
+            df['season:Winner/tie'] = df['season'].astype(str) + ':' + df['Winner/tie']
+            df['season:Loser/tie'] = df['season'].astype(str) + ':' + df['Loser/tie']
             df_master = pd.concat([df_master, df], ignore_index = True)
             #prevents overwhelming the website with requests
             time.sleep(.5)
@@ -147,8 +152,8 @@ class DataIO:
     #returns a list of teams from the given year
     def getTeams(self, years):
         df = self.getGamesDF(years)
-        winners = set(df['Winner/tie'].unique())
-        losers = set(df['Loser/tie'].unique())
+        winners = set(df['season:Winner/tie'].unique())
+        losers = set(df['season:Loser/tie'].unique())
         return list(winners | losers)
         
 
@@ -156,17 +161,37 @@ class DataIO:
         df = self.getGamesDF(years)
         gameList = []
         for i in df.index:
-            team1 = df.loc[i]['Winner/tie']
-            team2 = df.loc[i]['Loser/tie']
+            team1 = df.loc[i]['season:Winner/tie']
+            team2 = df.loc[i]['season:Loser/tie']
             t1points = df.loc[i]['Pts']
             t2points = df.loc[i]['Pts.1']
             gameList += [Game(team1, team2, t1points, t2points)]
         return gameList
 
+    #gets the appropriate season based on the year played, accounting for
+    #wraparound (2022 superbowl is associated with 2021 season)
+    def getTeamSeason(self, datestring):
+      year = self.getYearFromDateString(datestring)
+      if self.isEndOfSeason(datestring):
+        year -= 1
+      return year
+    
+    #takes the datestring pulled from the website and pulls out the year
+    def getYearFromDateString(self, datestring):
+      year = datestring[:4]
+      year = int(year)
+      assert (year > 1899 and year < 2100)
+      return year
+
+    #check if something is the end of season
+    #This is important for labelling teams with the right season when games are
+    #played in the following year (2021 team plays superbowl in early 2022)
+    def isEndOfSeason(self, datestring):
+      month = datestring[5:7]
+      month = int(month)
+      return month < 6
+
 dataio = DataIO()
-years = [2019, 2020, 2021]
+years = [2020, 2021]
 obj = Analysis(dataio.getTeams(years), dataio.getGames(years))
 [teams, offense, defense] = obj.optimize()
-
-
-
