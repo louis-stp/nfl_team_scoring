@@ -1,9 +1,9 @@
 from unicodedata import name
 from ortools.linear_solver import pywraplp
 import numpy as np
-import math
 import pandas as pd
 import requests
+import matplotlib.pyplot as plt
 
 AVG_PTS_PER_GAME = 23
 
@@ -100,6 +100,14 @@ class Analysis:
             print('Problem solved in %d iterations' % lp.iterations())
         else:
             print('The problem does not have an optimal solution.')
+        
+        offense = []
+        defense = []
+        for i in range(self.numTeams()):
+            offense += [x[i].solution_value()]
+            defense += [x[i+self.numTeams()].solution_value()]
+
+        return [self.teams, offense, defense]
 
     def numTeams(self):
         return len(self.teams)
@@ -153,4 +161,5 @@ class DataIO:
 dataio = DataIO()
 year = 2021
 obj = Analysis(dataio.getTeams(year), dataio.getGames(year))
-obj.optimize()
+[teams, offense, defense] = obj.optimize()
+plt.bar(teams, offense)
