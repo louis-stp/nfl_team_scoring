@@ -3,7 +3,7 @@ from ortools.linear_solver import pywraplp
 import numpy as np
 import pandas as pd
 import requests
-import matplotlib.pyplot as plt
+import time
 
 AVG_PTS_PER_GAME = 23
 
@@ -140,6 +140,8 @@ class DataIO:
             df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
             df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
             df_master = pd.concat([df_master, df], ignore_index = True)
+            #prevents overwhelming the website with requests
+            time.sleep(.5)
         return df_master
 
     #returns a list of teams from the given year
