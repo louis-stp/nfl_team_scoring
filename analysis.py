@@ -2,6 +2,10 @@ from unicodedata import name
 from ortools.linear_solver import pywraplp
 import numpy as np
 import math
+import pandas as pd
+import requests
+
+AVG_PTS_PER_GAME = 23
 
 class Game:
     def __init__(self,team1, team2, t1points, t2points):
@@ -110,10 +114,43 @@ class Analysis:
         return self.numGames()*4
 
         
-teams = ['A','B','C']
-g1 = Game('A','B',-8,-3)
-g2 = Game('B','C',-6,-2)
-g3 = Game('A','C',1,-9)
+class DataIO:
 
-obj = Analysis(teams, [g1,g2,g3])
+    def __init__(self):
+        pass
+
+    def getGamesDF(self, year):
+        url = 'https://www.pro-football-reference.com/years/'+str(year)+'/games.htm'
+        result = requests.get(url).text
+        df = pd.read_html(result)[0]
+        df = df[df['TOL'] != 'TOL']
+        df = df.dropna(thresh=2)
+        df = df.drop(labels=['Unnamed: 5','Unnamed: 7'], axis=1)
+        df= df.astype({'Pts':int,'Pts.1':int,'YdsW':int,'TOW':int,'YdsL':int,'TOL':int})
+        df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
+        df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
+        return df
+
+    #returns a list of teams from the given year
+    def getTeams(self, year):
+        df = self.getGamesDF(year)
+        winners = set(df['Winner/tie'].unique())
+        losers = set(df['Loser/tie'].unique())
+        return list(winners | losers)
+        
+
+    def getGames(self, year):
+        df = self.getGamesDF(year)
+        gameList = []
+        for i in df.index:
+            team1 = df.loc[i]['Winner/tie']
+            team2 = df.loc[i]['Loser/tie']
+            t1points = df.loc[i]['Pts']
+            t2points = df.loc[i]['Pts.1']
+            gameList += [Game(team1, team2, t1points, t2points)]
+        return gameList
+
+dataio = DataIO()
+year = 2021
+obj = Analysis(dataio.getTeams(year), dataio.getGames(year))
 obj.optimize()
