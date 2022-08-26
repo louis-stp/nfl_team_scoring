@@ -93,11 +93,11 @@ class Analysis:
 
         #Displays IP solver results. Useful for troubleshooting
         if status == pywraplp.Solver.OPTIMAL:
-            print('Objective value =', lp.Objective().Value())
             for j in range(numVar):
                 print(x[j].name(), ' = ', x[j].solution_value())
             print('Problem solved in %f milliseconds' % lp.wall_time())
             print('Problem solved in %d iterations' % lp.iterations())
+            print('Objective value =', lp.Objective().Value())
         else:
             print('The problem does not have an optimal solution.')
         
@@ -127,28 +127,31 @@ class DataIO:
     def __init__(self):
         pass
 
-    def getGamesDF(self, year):
-        url = 'https://www.pro-football-reference.com/years/'+str(year)+'/games.htm'
-        result = requests.get(url).text
-        df = pd.read_html(result)[0]
-        df = df[df['TOL'] != 'TOL']
-        df = df.dropna(thresh=2)
-        df = df.drop(labels=['Unnamed: 5','Unnamed: 7'], axis=1)
-        df= df.astype({'Pts':int,'Pts.1':int,'YdsW':int,'TOW':int,'YdsL':int,'TOL':int})
-        df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
-        df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
-        return df
+    def getGamesDF(self, years):
+        df_master = pd.DataFrame()
+        for year in years:
+            url = 'https://www.pro-football-reference.com/years/'+str(year)+'/games.htm'
+            result = requests.get(url).text
+            df = pd.read_html(result)[0]
+            df = df[df['TOL'] != 'TOL']
+            df = df.dropna(thresh=2)
+            df = df.drop(labels=['Unnamed: 5','Unnamed: 7'], axis=1)
+            df= df.astype({'Pts':int,'Pts.1':int,'YdsW':int,'TOW':int,'YdsL':int,'TOL':int})
+            df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
+            df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
+            df_master = pd.concat([df_master, df], ignore_index = True)
+        return df_master
 
     #returns a list of teams from the given year
-    def getTeams(self, year):
-        df = self.getGamesDF(year)
+    def getTeams(self, years):
+        df = self.getGamesDF(years)
         winners = set(df['Winner/tie'].unique())
         losers = set(df['Loser/tie'].unique())
         return list(winners | losers)
         
 
-    def getGames(self, year):
-        df = self.getGamesDF(year)
+    def getGames(self, years):
+        df = self.getGamesDF(years)
         gameList = []
         for i in df.index:
             team1 = df.loc[i]['Winner/tie']
@@ -159,7 +162,9 @@ class DataIO:
         return gameList
 
 dataio = DataIO()
-year = 2021
-obj = Analysis(dataio.getTeams(year), dataio.getGames(year))
+years = [2019, 2020, 2021]
+obj = Analysis(dataio.getTeams(years), dataio.getGames(years))
 [teams, offense, defense] = obj.optimize()
-plt.bar(teams, offense)
+
+
+
