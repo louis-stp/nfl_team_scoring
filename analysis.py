@@ -29,7 +29,7 @@ class Analysis:
         numConstraints = self.numConstraints()
         numVar = self.numVar()
 
-        lp = pywraplp.Solver.CreateSolver('SCIP')
+        lp = pywraplp.Solver.CreateSolver('GLOP')
         infinity = lp.infinity()
 
         #creates variables
@@ -40,7 +40,7 @@ class Analysis:
         #define constraints
         slack_var_start_index = self.numTeams()*2
         defense_var_start_index = self.numTeams()
-        constraint_counter = 0
+        slackvar_counter = 0
         for game in self.games:
             A_subset = np.zeros([4,numVar])
             B_subset = np.zeros(4)
@@ -52,28 +52,28 @@ class Analysis:
                 if j == 0:
                     A_subset[j,t1_index] = 1
                     A_subset[j,t2_index+defense_var_start_index] = -1
-                    A_subset[j,slack_var_start_index+constraint_counter] = -1
+                    A_subset[j,slack_var_start_index+slackvar_counter] = -1
                     B_subset[j] = t1_points
                 if j == 1:
                     A_subset[j,t1_index] = -1
                     A_subset[j,t2_index+defense_var_start_index] = 1
-                    A_subset[j,slack_var_start_index+constraint_counter] = -1
+                    A_subset[j,slack_var_start_index+slackvar_counter] = -1
                     B_subset[j] = -t1_points
                 if j == 2:
                     A_subset[j,t2_index] = 1
                     A_subset[j,t1_index+defense_var_start_index] = -1
-                    A_subset[j,slack_var_start_index+constraint_counter] = -1
+                    A_subset[j,slack_var_start_index+slackvar_counter+1] = -1
                     B_subset[j] = t2_points
                 if j == 3:
                     A_subset[j,t2_index] = -1
                     A_subset[j,t1_index+defense_var_start_index] = 1
-                    A_subset[j,slack_var_start_index+constraint_counter] = -1
+                    A_subset[j,slack_var_start_index+slackvar_counter+1] = -1
                     B_subset[j] = -t2_points
-                constraint = lp.RowConstraint(0, B_subset[j], '')
+                constraint = lp.RowConstraint(-infinity, B_subset[j], '')
                 for k in range(numVar):
                     constraint.SetCoefficient(x[k], A_subset[j,k])
-                constraint_counter+1
-
+            slackvar_counter = slackvar_counter + 2
+                
         C = np.zeros(numVar)
         for i in range(self.numTeams()*2,numVar):
             C[i] = 1
@@ -94,7 +94,6 @@ class Analysis:
                 print(x[j].name(), ' = ', x[j].solution_value())
             print('Problem solved in %f milliseconds' % lp.wall_time())
             print('Problem solved in %d iterations' % lp.iterations())
-            print('Problem solved in %d branch-and-bound nodes' % lp.nodes())
         else:
             print('The problem does not have an optimal solution.')
 
@@ -105,7 +104,16 @@ class Analysis:
         return len(self.games)
 
     def numVar(self):
-        return self.numTeams()*2 + self.numConstraints()
+        return self.numTeams()*2 + self.numGames()*2
 
     def numConstraints(self):
         return self.numGames()*4
+
+        
+teams = ['A','B','C']
+g1 = Game('A','B',-8,-3)
+g2 = Game('B','C',-6,-2)
+g3 = Game('A','C',1,-9)
+
+obj = Analysis(teams, [g1,g2,g3])
+obj.optimize()
