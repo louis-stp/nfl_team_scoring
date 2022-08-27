@@ -123,8 +123,8 @@ class Analysis:
     def numConstraints(self):
         return self.numGames()*4
 
-        
-class DataIO:
+#handles the data IO for the Analysis class, in charge of the linear optimisation    
+class Analysis_IO:
 
     def __init__(self):
         pass
@@ -191,9 +191,7 @@ class DataIO:
       month = int(month)
       return month < 6
 
-    #def getTeamVariables(self)
-
-dataio = DataIO()
+dataio = Analysis_IO()
 years = [2020, 2021]
 obj = Analysis(dataio.getTeams(years), dataio.getGames(years))
 [teams, offense, defense] = obj.optimize()
