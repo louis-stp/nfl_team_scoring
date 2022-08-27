@@ -191,6 +191,8 @@ class DataIO:
       month = int(month)
       return month < 6
 
+    #def getTeamVariables(self)
+
 dataio = DataIO()
 years = [2020, 2021]
 obj = Analysis(dataio.getTeams(years), dataio.getGames(years))
