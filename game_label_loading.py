@@ -21,7 +21,7 @@ class Data_IO:
     def shuffleTeamOrder(self,df):
         df_shuffle = pd.DataFrame()
         for i in range(len(df.index)):
-            row = {'season':[df.iloc[i]['season']],'Team1':[""],'Team2':[""],"pts1":[0],'pts2':[0]}
+            row = {'Week':[df.iloc[i]['Week']],'season':[df.iloc[i]['season']],'Team1':[""],'Team2':[""],"pts1":[0],'pts2':[0]}
 
             if randint(0,1) == 1:
                 row['Team1'] = [self.getTeamCode(df.iloc[i]['Winner/tie'])]
@@ -54,7 +54,7 @@ class Data_IO:
             df['Pts'] = df['Pts'] - AVG_PTS_PER_GAME
             df['Pts.1'] = df['Pts.1'] - AVG_PTS_PER_GAME
             df['season'] = df['Date'].apply(self.getTeamSeason)
-            df = df[['season','Winner/tie','Loser/tie','Pts','Pts.1']]
+            df = df[['Week','season','Winner/tie','Loser/tie','Pts','Pts.1']]
             df_master = pd.concat([df_master, df], ignore_index = True)
             #prevents overwhelming the website with requests
             time.sleep(.1)
