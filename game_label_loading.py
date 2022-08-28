@@ -17,31 +17,27 @@ class Data_IO:
         return code
 
     #since the dataframes always have the winner listed first, I randomly flip 50%
-    #of the team and points values in their row order to prevent bias
-    #so that the model does not "learn" that winners are always listed first
+    #of the team and points values to prevent bias
     def shuffleTeamOrder(self,df):
         df_shuffle = pd.DataFrame()
         for i in range(len(df.index)):
-            row1 = {'season':[df.iloc[i]['season']],'OffenseTeam':[""],'DefenseTeam':[""],"pointsScored":[0]}
-            row2 = {'season':[df.iloc[i]['season']],'OffenseTeam':[""],'DefenseTeam':[""],"pointsScored":[0]}
-            row1['OffenseTeam'] = [self.getTeamCode(df.iloc[i]['Winner/tie'])]
-            row1['DefenseTeam'] = [self.getTeamCode(df.iloc[i]['Loser/tie'])]
-            row1['pointsScored'] = [df.iloc[i]['Pts']]
+            row = {'season':[df.iloc[i]['season']],'Team1':[""],'Team2':[""],"pts1":[0],'pts2':[0]}
 
-            row2['OffenseTeam'] = [self.getTeamCode(df.iloc[i]['Loser/tie'])]
-            row2['DefenseTeam'] = [self.getTeamCode(df.iloc[i]['Winner/tie'])]
-            row2['pointsScored'] = [df.iloc[i]['Pts.1']]
+            if randint(0,1) == 1:
+                row['Team1'] = [self.getTeamCode(df.iloc[i]['Winner/tie'])]
+                row['Team2'] = [self.getTeamCode(df.iloc[i]['Loser/tie'])]
+                row['pts1'] = [df.iloc[i]['Pts']]
+                row['pts2'] = [df.iloc[i]['Pts.1']]
+            else:
+                row['Team2'] = [self.getTeamCode(df.iloc[i]['Winner/tie'])]
+                row['Team1'] = [self.getTeamCode(df.iloc[i]['Loser/tie'])]
+                row['pts2'] = [df.iloc[i]['Pts']]
+                row['pts1'] = [df.iloc[i]['Pts.1']]
 
             #scrambles the order of which row is written first, thus not biasing
             #the order of labels
-            if randint(0,1) == 1:
-                temp_df1 = pd.DataFrame.from_dict(row1)
-                temp_df2 = pd.DataFrame.from_dict(row2)
-            else:
-                temp_df1 = pd.DataFrame.from_dict(row2)
-                temp_df2 = pd.DataFrame.from_dict(row1)
-            df_shuffle = pd.concat([df_shuffle, temp_df1], ignore_index = True)
-            df_shuffle = pd.concat([df_shuffle, temp_df2], ignore_index = True)
+            temp_df = pd.DataFrame.from_dict(row)
+            df_shuffle = pd.concat([df_shuffle, temp_df], ignore_index = True)
         return df_shuffle
             
 
