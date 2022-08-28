@@ -80,6 +80,6 @@ class Data_IO_Odds:
 
 
 dataio  = Data_IO_Odds()
-df = dataio.loadOdds(range(2010,2022))
+df = dataio.loadOdds(range(2000,2022))
 df.to_csv("game_odds")
 

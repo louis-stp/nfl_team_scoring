@@ -169,7 +169,7 @@ teams = ('crd','atl','rav','buf','car','chi','cin','cle','dal','den','det',
          'gnb','htx','clt','jax','kan','rai','sdg','ram','mia','min','nwe',
          'nor','nyg','nyj','phi','pit','sfo','sea','tam','oti','was')
 
-seasons = range(2010,2022)
+seasons = range(2000,2022)
 dataio = PlayerDataIO()
 [offense, defense] = dataio.getTeamData(seasons,teams)
 offense.to_csv('offense_data')
